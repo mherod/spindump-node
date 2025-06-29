@@ -1,5 +1,4 @@
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 
 export type SpindumpFormat = 'heavy' | 'timeline';
 export type SpindumpTarget = number | string | '-notarget';
@@ -299,7 +298,7 @@ export class Spindump {
 
   private parseProcessReference(text: string): ProcessReference | undefined {
     // Parse "processName [pid] [unique pid uniquePid]" or "processName [pid]"
-    const match = text.match(/^(.+?)\s+\[(\d+)\](?:\s+\[unique pid (\d+)\])?/);
+    const match = text.match(/^(.+?)\s+\[(\d+)](?:\s+\[unique pid (\d+)])?/);
     if (!match || !match[1] || !match[2]) return undefined;
     
     return {
@@ -355,7 +354,7 @@ export class Spindump {
     const rest = countMatch[2];
     
     // Try to parse full format: "function + offset (library + libraryOffset) [address] range"
-    const fullMatch = rest.match(/^(.+?)\s+\+\s+(\d+)\s+\((.+?)\s+\+\s+(\d+)\)\s+\[([0-9a-fx]+)\](?:\s+(.+))?$/);
+    const fullMatch = rest.match(/^(.+?)\s+\+\s+(\d+)\s+\((.+?)\s+\+\s+(\d+)\)\s+\[([0-9a-fx]+)](?:\s+(.+))?$/);
     if (fullMatch && fullMatch[1]) {
       return {
         count,
@@ -371,7 +370,7 @@ export class Spindump {
     }
     
     // Simpler format without library info
-    const simpleMatch = rest.match(/^(.+?)\s+\[([0-9a-fx]+)\](?:\s+(.+))?$/);
+    const simpleMatch = rest.match(/^(.+?)\s+\[([0-9a-fx]+)](?:\s+(.+))?$/);
     if (simpleMatch && simpleMatch[1]) {
       return {
         count,
@@ -435,6 +434,10 @@ export class Spindump {
         header.memorySize = line.substring('Memory size:'.length).trim();
       } else if (line.startsWith('Advisory levels:')) {
         header.advisoryLevels = this.parseAdvisoryLevels(line.substring('Advisory levels:'.length).trim());
+      } else if (line.startsWith('Parent:')) {
+        header.parent = this.parseProcessReference(line.substring('Parent:'.length).trim());
+      } else if (line.startsWith('Responsible:')) {
+        header.responsible = this.parseProcessReference(line.substring('Responsible:'.length).trim());
       } else if (trimmed.includes('format: stacks are sorted by count')) {
         format = 'heavy';
       } else if (trimmed.includes('format: stacks are sorted chronologically')) {
@@ -449,7 +452,7 @@ export class Spindump {
         }
         
         // Start new process
-        const processMatch = line.match(/Process:\s+(.+?)\s+\[(\d+)\](?:\s+\[unique pid (\d+)\])?/);
+        const processMatch = line.match(/Process:\s+(.+?)\s+\[(\d+)](?:\s+\[unique pid (\d+)])?/);
         if (processMatch && processMatch[1] && processMatch[2]) {
           currentProcess = {
             name: processMatch[1],
@@ -737,6 +740,19 @@ export class Spindump {
   }
 
   public async run(options: SpindumpOptions = {}): Promise<SpindumpResult> {
+    // Validate options
+    if (options.duration !== undefined && (options.duration < 0 || options.duration > 3600)) {
+      throw new Error('Duration must be between 0 and 3600 seconds');
+    }
+    
+    if (options.interval !== undefined && (options.interval < 1 || options.interval > 1000)) {
+      throw new Error('Interval must be between 1 and 1000 milliseconds');
+    }
+
+    if (options.inputPath && !options.inputPath.trim()) {
+      throw new Error('Input path cannot be empty');
+    }
+
     return new Promise((resolve, reject) => {
       const args = this.buildCommand(options);
       
@@ -878,6 +894,19 @@ export class SpindumpWatcher {
   private intervalId?: NodeJS.Timeout;
 
   constructor(options: SpindumpWatcherOptions = {}) {
+    // Validate watcher options
+    if (options.pollInterval !== undefined && (options.pollInterval < 1000 || options.pollInterval > 3600000)) {
+      throw new Error('Poll interval must be between 1 second and 1 hour');
+    }
+    
+    if (options.sampleDuration !== undefined && (options.sampleDuration < 1 || options.sampleDuration > 60)) {
+      throw new Error('Sample duration must be between 1 and 60 seconds');
+    }
+    
+    if (options.maxSamples !== undefined && (options.maxSamples < 1 || options.maxSamples > 1000)) {
+      throw new Error('Max samples must be between 1 and 1000');
+    }
+
     this.options = {
       pollInterval: 5000, // 5 seconds
       sampleDuration: 2, // 2 seconds
@@ -990,7 +1019,7 @@ export class SpindumpWatcher {
       advisoryLevels: report.header.advisoryLevels
     };
 
-    const analysis: SampleAnalysis = {
+    return {
       timestamp: new Date(),
       sampleNumber: this.currentSample,
       processCount: report.processes.length,
@@ -998,8 +1027,6 @@ export class SpindumpWatcher {
       systemMetrics,
       changes: this.compareWithPrevious(report)
     };
-
-    return analysis;
   }
 
   private findTargetProcess(report: ParsedSpindumpReport): SpindumpProcess | undefined {
@@ -1007,7 +1034,7 @@ export class SpindumpWatcher {
     
     if (typeof this.options.target === 'number') {
       return report.processes.find(p => p.pid === this.options.target);
-    } else if (typeof this.options.target === 'string' && this.options.target !== '-notarget') {
+    } else if (this.options.target !== '-notarget') {
       return report.processes.find(p => p.name.includes(this.options.target as string));
     }
     
@@ -1127,4 +1154,5 @@ export class SpindumpWatcher {
   }
 }
 
+// Default export for convenience - allows `import Spindump from 'spindump-node'`
 export default Spindump;
