@@ -11,19 +11,18 @@ async function testSpindump() {
   try {
     const spindump = new Spindump();
     const testOptions = {
-      target: 33162,
+      target: 33_162,
       duration: 3,
       interval: 10,
       format: 'timeline',
       onlyRunnable: true,
-      stdout: true
+      stdout: true,
     };
 
     // Access the private buildCommand method through a simple test
     console.log('✅ Library imported successfully');
     console.log('✅ Spindump class instantiated');
     console.log('✅ Options object created:', JSON.stringify(testOptions, null, 2));
-
   } catch (error) {
     console.error('❌ Error with library setup:', error.message);
     return;
@@ -36,9 +35,9 @@ async function testSpindump() {
     // Try a very short sample to test permissions
     console.log('📊 Attempting to sample Node.js process (PID: 33162) for 1 second...');
 
-    const result = await Spindump.sample(33162, 1, 50); // 1 second, 50ms intervals
+    const result = await Spindump.sample(33_162, 1, 50); // 1 second, 50ms intervals
 
-    console.log(`✅ Sample completed successfully!`);
+    console.log('✅ Sample completed successfully!');
     console.log(`📋 Exit code: ${result.exitCode}`);
     console.log(`📄 Output length: ${result.output.length} characters`);
 
@@ -50,7 +49,6 @@ async function testSpindump() {
       console.log(`${i + 1}: ${line}`);
     });
     console.log('=' + '='.repeat(50));
-
   } catch (error) {
     if (error.message.includes('must be run as root')) {
       console.log('⚠️  Root privileges required for live sampling');
@@ -85,7 +83,6 @@ async function testSpindump() {
       // Parse existing spindump file
       const parsed = await Spindump.parseFile('/path/to/report.spindump');
       `);
-
     } else {
       console.error('❌ Unexpected error:', error.message);
     }

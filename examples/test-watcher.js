@@ -13,27 +13,33 @@ async function testWatcher() {
     autoSudo: true,
 
     onSample: (report, analysis) => {
-      console.log(`\n📊 Sample ${analysis.sampleNumber} @ ${analysis.timestamp.toLocaleTimeString()}`);
-      console.log(`   System: ${analysis.processCount} processes, ${analysis.systemMetrics.activeCpus} CPUs`);
+      console.log(
+        `\n📊 Sample ${analysis.sampleNumber} @ ${analysis.timestamp.toLocaleTimeString()}`
+      );
+      console.log(
+        `   System: ${analysis.processCount} processes, ${analysis.systemMetrics.activeCpus} CPUs`
+      );
 
       if (analysis.targetProcess) {
         const target = analysis.targetProcess;
         console.log(`   Target: ${target.name} [${target.pid}] - ${target.footprint}`);
-        console.log(`   Threads: ${target.threadCount} (${target.threadActivity.filter(t => t.state === 'running').length} running, ${target.threadActivity.filter(t => t.state === 'blocked').length} blocked)`);
+        console.log(
+          `   Threads: ${target.threadCount} (${target.threadActivity.filter((t) => t.state === 'running').length} running, ${target.threadActivity.filter((t) => t.state === 'blocked').length} blocked)`
+        );
 
         // Show top 3 hot functions
         if (target.hotFunctions.length > 0) {
-          console.log(`   Hot functions:`);
+          console.log('   Hot functions:');
           target.hotFunctions.slice(0, 3).forEach((func, i) => {
             console.log(`      ${i + 1}. ${func.function} (${func.percentage.toFixed(1)}%)`);
           });
         }
 
         // Show thread activity
-        const activeThreads = target.threadActivity.filter(t => t.sampleCount > 0);
+        const activeThreads = target.threadActivity.filter((t) => t.sampleCount > 0);
         if (activeThreads.length > 0) {
-          console.log(`   Active threads:`);
-          activeThreads.slice(0, 3).forEach(thread => {
+          console.log('   Active threads:');
+          activeThreads.slice(0, 3).forEach((thread) => {
             console.log(`      ${thread.threadId}: ${thread.topFunction} (${thread.state})`);
           });
         }
@@ -42,10 +48,12 @@ async function testWatcher() {
       // Show changes from previous sample
       if (analysis.changes) {
         const changes = analysis.changes;
-        let changeMsg = [];
+        const changeMsg = [];
 
         if (changes.processCountDelta !== 0) {
-          changeMsg.push(`${changes.processCountDelta > 0 ? '+' : ''}${changes.processCountDelta} processes`);
+          changeMsg.push(
+            `${changes.processCountDelta > 0 ? '+' : ''}${changes.processCountDelta} processes`
+          );
         }
 
         if (changes.footprintDelta) {
@@ -68,7 +76,7 @@ async function testWatcher() {
 
     onError: (error) => {
       console.error(`❌ Watcher error: ${error.message}`);
-    }
+    },
   });
 
   console.log('🚀 Starting watcher for Node.js processes...');
@@ -89,35 +97,35 @@ async function testWatcher() {
         console.log(`   Latest analysis at: ${latest?.timestamp.toLocaleString()}`);
 
         // Calculate trends
-        const processCounts = history.map(h => h.processCount);
+        const processCounts = history.map((h) => h.processCount);
         const avgProcesses = processCounts.reduce((a, b) => a + b, 0) / processCounts.length;
         console.log(`   Average process count: ${avgProcesses.toFixed(1)}`);
 
         // Show target process trends
-        const targetSamples = history.filter(h => h.targetProcess);
+        const targetSamples = history.filter((h) => h.targetProcess);
         if (targetSamples.length > 1) {
           const firstTarget = targetSamples[0].targetProcess;
           const lastTarget = targetSamples[targetSamples.length - 1].targetProcess;
 
-          console.log(`\n🎯 Target Process Trends:`);
+          console.log('\n🎯 Target Process Trends:');
           console.log(`   Process: ${lastTarget?.name} [${lastTarget?.pid}]`);
           console.log(`   Memory: ${firstTarget?.footprint} → ${lastTarget?.footprint}`);
           console.log(`   Threads: ${firstTarget?.threadCount} → ${lastTarget?.threadCount}`);
 
           // Find most consistent hot functions
           const functionCounts = new Map();
-          targetSamples.forEach(sample => {
-            sample.targetProcess?.hotFunctions.slice(0, 3).forEach(func => {
+          targetSamples.forEach((sample) => {
+            sample.targetProcess?.hotFunctions.slice(0, 3).forEach((func) => {
               functionCounts.set(func.function, (functionCounts.get(func.function) || 0) + 1);
             });
           });
 
           const consistentFunctions = Array.from(functionCounts.entries())
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 3);
 
           if (consistentFunctions.length > 0) {
-            console.log(`   Most consistent hot functions:`);
+            console.log('   Most consistent hot functions:');
             consistentFunctions.forEach(([func, count]) => {
               console.log(`      ${func} (appeared in ${count}/${targetSamples.length} samples)`);
             });
@@ -139,9 +147,7 @@ async function testWatcher() {
         console.log('   - Sample history management');
         process.exit(0);
       }, 3000);
-
-    }, 15000); // Run for 15 seconds
-
+    }, 15_000); // Run for 15 seconds
   } catch (error) {
     console.error('❌ Failed to start watcher:', error.message);
     process.exit(1);

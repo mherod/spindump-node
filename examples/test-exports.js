@@ -10,7 +10,7 @@ console.log('SpindumpWatcher class:', typeof SpindumpWatcher);
 try {
   const spindump = new Spindump();
   console.log('✓ Spindump instance created');
-  
+
   const watcher = new SpindumpWatcher();
   console.log('✓ SpindumpWatcher instance created');
 } catch (error) {

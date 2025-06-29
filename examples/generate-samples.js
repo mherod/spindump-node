@@ -1,3 +1,4 @@
+// biome-ignore lint/suspicious/noConsoleLog: Console output is required for example scripts
 const { Spindump } = require('../dist');
 const fs = require('fs');
 const path = require('path');
@@ -14,8 +15,8 @@ async function generateSampleData() {
         duration: 3,
         interval: 50,
         format: 'heavy',
-        outputPath: './samples/node-heavy.spindump'
-      }
+        outputPath: './samples/node-heavy.spindump',
+      },
     },
     {
       name: 'node-timeline-sample',
@@ -25,8 +26,8 @@ async function generateSampleData() {
         duration: 3,
         interval: 50,
         format: 'timeline',
-        outputPath: './samples/node-timeline.spindump'
-      }
+        outputPath: './samples/node-timeline.spindump',
+      },
     },
     {
       name: 'system-sample',
@@ -36,8 +37,8 @@ async function generateSampleData() {
         duration: 2,
         interval: 100,
         format: 'heavy',
-        outputPath: './samples/system-wide.spindump'
-      }
+        outputPath: './samples/system-wide.spindump',
+      },
     },
     {
       name: 'stdout-sample',
@@ -48,9 +49,9 @@ async function generateSampleData() {
         interval: 100,
         format: 'heavy',
         stdout: true,
-        noFile: true
-      }
-    }
+        noFile: true,
+      },
+    },
   ];
 
   // Create samples directory
@@ -68,7 +69,7 @@ async function generateSampleData() {
       const result = await spindump.run({
         ...sample.options,
         autoSudo: true,
-        sudoPrompt: `🔬 Generating ${sample.name}: `
+        sudoPrompt: `🔬 Generating ${sample.name}: `,
       });
 
       console.log(`✅ ${sample.name} completed successfully`);
@@ -88,7 +89,7 @@ async function generateSampleData() {
           const stdoutResult = await spindump.run({
             inputPath: sample.options.outputPath,
             stdout: true,
-            format: sample.options.format
+            format: sample.options.format,
           });
 
           const analysisFile = `./samples/${sample.name}-analysis.txt`;
@@ -98,7 +99,6 @@ async function generateSampleData() {
           console.log(`   ⚠️  Could not create analysis copy: ${err.message}`);
         }
       }
-
     } catch (error) {
       console.error(`❌ Failed to generate ${sample.name}:`, error.message);
     }
@@ -109,7 +109,7 @@ async function generateSampleData() {
 
   if (fs.existsSync('./samples')) {
     const files = fs.readdirSync('./samples');
-    files.forEach(file => {
+    files.forEach((file) => {
       const filePath = path.join('./samples', file);
       const stats = fs.statSync(filePath);
       console.log(`   ${file} (${(stats.size / 1024).toFixed(1)} KB)`);
@@ -122,7 +122,7 @@ async function generateSampleData() {
   console.log('   3. Design parsing interfaces based on the data');
 }
 
-generateSampleData().catch(err => {
+generateSampleData().catch((err) => {
   console.error('💥 Generation failed:', err);
   process.exit(1);
 });

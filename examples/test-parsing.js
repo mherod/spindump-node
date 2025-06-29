@@ -13,7 +13,7 @@ async function testParsing() {
 
     const parsed = Spindump.parseText(sampleData);
 
-    console.log(`✅ Parsing completed successfully!`);
+    console.log('✅ Parsing completed successfully!');
     console.log(`   Format: ${parsed.format}`);
     console.log(`   Processes found: ${parsed.processes.length}`);
 
@@ -47,7 +47,9 @@ async function testParsing() {
         // Show top stack frames
         thread.stackFrames.slice(0, 3).forEach((frame, j) => {
           const indent = '  '.repeat(Math.floor(frame.indentLevel / 2));
-          console.log(`         ${j + 1}. ${indent}${frame.function}${frame.count ? ` (${frame.count})` : ''}`);
+          console.log(
+            `         ${j + 1}. ${indent}${frame.function}${frame.count ? ` (${frame.count})` : ''}`
+          );
         });
       }
       console.log('');
@@ -58,7 +60,7 @@ async function testParsing() {
 
     const liveResult = await Spindump.sampleAndParse('node', 1, 100);
 
-    console.log(`✅ Live sample parsed successfully!`);
+    console.log('✅ Live sample parsed successfully!');
     console.log(`   Format: ${liveResult.format}`);
     console.log(`   Processes found: ${liveResult.processes.length}`);
     console.log(`   Target process threads: ${liveResult.processes[0]?.threads.length || 0}`);
@@ -71,7 +73,9 @@ async function testParsing() {
       mainThread.stackFrames.slice(0, 8).forEach((frame, i) => {
         const indent = '  '.repeat(Math.floor(frame.indentLevel / 4));
         const kernel = frame.isKernel ? '*' : ' ';
-        console.log(`   ${kernel}${indent}${frame.function}${frame.count ? ` (${frame.count})` : ''}`);
+        console.log(
+          `   ${kernel}${indent}${frame.function}${frame.count ? ` (${frame.count})` : ''}`
+        );
       });
     }
 
@@ -80,18 +84,19 @@ async function testParsing() {
 
     const fileResult = await Spindump.parseFileAndGet('./samples/node-heavy.spindump', 'heavy');
 
-    console.log(`✅ File parsed successfully!`);
+    console.log('✅ File parsed successfully!');
     console.log(`   Format: ${fileResult.format}`);
     console.log(`   Processes found: ${fileResult.processes.length}`);
 
     // Performance comparison
-    const nodeProcesses = fileResult.processes.filter(p => p.name.includes('node'));
+    const nodeProcesses = fileResult.processes.filter((p) => p.name.includes('node'));
     console.log(`   Node.js processes: ${nodeProcesses.length}`);
 
-    nodeProcesses.forEach(process => {
-      console.log(`   - ${process.name} [${process.pid}]: ${process.footprint}, ${process.threads.length} threads`);
+    nodeProcesses.forEach((process) => {
+      console.log(
+        `   - ${process.name} [${process.pid}]: ${process.footprint}, ${process.threads.length} threads`
+      );
     });
-
   } catch (error) {
     console.error('❌ Parsing test failed:', error.message);
     if (error.stack) {
@@ -102,7 +107,9 @@ async function testParsing() {
   console.log('\n✨ Parsing tests completed!');
   console.log('\n💡 Available parsing methods:');
   console.log('   - Spindump.parseText(output) - Parse raw spindump text');
-  console.log('   - Spindump.sampleAndParse(target, duration, interval) - Sample and parse in one call');
+  console.log(
+    '   - Spindump.sampleAndParse(target, duration, interval) - Sample and parse in one call'
+  );
   console.log('   - Spindump.parseFileAndGet(path, format) - Load and parse spindump file');
   console.log('   - new Spindump().parse(output) - Instance method for parsing');
 }

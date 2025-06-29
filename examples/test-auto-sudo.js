@@ -31,16 +31,17 @@ async function testAutoSudo() {
     console.log('=' + '='.repeat(60));
 
     // Look for interesting process information
-    const processLines = lines.filter(line =>
-      line.includes('Process:') ||
-      line.includes('node') ||
-      line.includes('Path:') ||
-      line.includes('Identifier:')
+    const processLines = lines.filter(
+      (line) =>
+        line.includes('Process:') ||
+        line.includes('node') ||
+        line.includes('Path:') ||
+        line.includes('Identifier:')
     );
 
     if (processLines.length > 0) {
       console.log('\n🎯 Key process information:');
-      processLines.slice(0, 8).forEach(line => {
+      processLines.slice(0, 8).forEach((line) => {
         console.log(`   ${line.trim()}`);
       });
     }
@@ -56,13 +57,12 @@ async function testAutoSudo() {
       format: 'heavy',
       onlyRunnable: true,
       autoSudo: true,
-      sudoPrompt: '🚀 Advanced spindump test needs privileges: '
+      sudoPrompt: '🚀 Advanced spindump test needs privileges: ',
     });
 
     console.log('✅ Advanced sample completed!');
     console.log(`📋 Exit code: ${advancedResult.exitCode}`);
     console.log(`📄 Output length: ${advancedResult.output.length} characters`);
-
   } catch (error) {
     console.error('❌ Error during auto-sudo test:', error.message);
 
