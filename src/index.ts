@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 import { spawn } from 'node:child_process';
 
 // Regex patterns defined at top level for performance
@@ -20,7 +22,8 @@ const STACK_FRAME_KERNEL_REGEX = /^\s*\*\d+\s+/;
 const STACK_FRAME_SPACES_REGEX = /^\s+/;
 const BINARY_IMAGE_START_REGEX = /^\s*0x[0-9a-f]+/;
 const BINARY_IMAGE_REGEX =
-  /^\s*(0x[0-9a-f]+\s*-\s*0x[0-9a-f]+)\s+(.+?)\s+\(([^)]+)\)\s+<([^>]+)>\s+(.+)$/;
+  /^\s*(0x[0-9a-f]+\s*-\s*(?:0x[0-9a-f]+|\?\?\?))\s+(.+?)\s+<([^>]+)>\s+(.+)$/;
+const BINARY_IMAGE_VERSION_REGEX = /^(.+?)\s+\(([^)]+)\)$/;
 
 export type SpindumpFormat = 'heavy' | 'timeline';
 export type SpindumpTarget = number | string | '-notarget';
@@ -588,19 +591,25 @@ export class Spindump {
 
     if (inBinaryImages && currentProcess && line.match(BINARY_IMAGE_START_REGEX)) {
       const binaryMatch = line.match(BINARY_IMAGE_REGEX);
-      if (
-        binaryMatch?.[1] &&
-        binaryMatch[2] &&
-        binaryMatch[3] &&
-        binaryMatch[4] &&
-        binaryMatch[5]
-      ) {
+      if (binaryMatch?.[1] && binaryMatch[2] && binaryMatch[3] && binaryMatch[4]) {
+        // Parse name and version from the middle part
+        const nameVersionPart = binaryMatch[2].trim();
+        const versionMatch = nameVersionPart.match(BINARY_IMAGE_VERSION_REGEX);
+
+        let name = nameVersionPart;
+        let version = '';
+
+        if (versionMatch?.[1] && versionMatch[2]) {
+          name = versionMatch[1].trim();
+          version = versionMatch[2].trim();
+        }
+
         currentProcess.binaryImages?.push({
           addressRange: binaryMatch[1].trim(),
-          name: binaryMatch[2].trim(),
-          version: binaryMatch[3].trim(),
-          uuid: binaryMatch[4].trim(),
-          path: binaryMatch[5].trim(),
+          name,
+          version,
+          uuid: binaryMatch[3].trim(),
+          path: binaryMatch[4].trim(),
         });
       }
     }
@@ -619,6 +628,11 @@ export class Spindump {
   }
 
   private isStackFrameLine(line: string): boolean {
+    // Don't treat "Binary Images:" as a stack frame line
+    if (line.trim() === 'Binary Images:') {
+      return false;
+    }
+
     return (
       line.match(STACK_FRAME_DIGITS_REGEX) !== null ||
       line.match(STACK_FRAME_KERNEL_REGEX) !== null ||
@@ -934,7 +948,7 @@ export class Spindump {
       throw new Error('Interval must be between 1 and 1000 milliseconds');
     }
 
-    if (options.inputPath && !options.inputPath.trim()) {
+    if (options.inputPath !== undefined && !options.inputPath.trim()) {
       throw new Error('Input path cannot be empty');
     }
 
